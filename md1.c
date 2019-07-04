@@ -6,11 +6,29 @@
 #include <linux/timer.h>
 #include <linux/ktime.h>
 #include <linux/jiffies.h>
+#include <linux/time.h>
  
 MODULE_LICENSE("GPL"); 
 MODULE_AUTHOR("Appa"); 
 
-struct timer_list my_timer;
+struct timer_list	my_timer;
+char				time[7]={'\0'};
+
+void	convert_jiffies_to_time(void)
+{
+	struct timeval	timespec;
+	long			x;
+
+	do_gettimeofday(&timespec);
+	x = (timespec.tv_sec + jiffies / HZ) % 86400;
+	time[0] = '0' + (x / 3600) / 10;
+	time[1] = '0' + (x / 3600) % 10;
+	time[2] = ':';
+	time[3] = '0' + ((x % 3600) / 60) / 10;
+	time[4] = '0' + ((x % 3600) / 60) % 10;
+	time[5] = '\n';
+	time[6] = '\0';
+}
 
 void	my_func(struct timer_list *data)
 {
@@ -28,7 +46,8 @@ void	my_func(struct timer_list *data)
 	}
 	fs = get_fs();
 	set_fs(get_ds());
-	if ((n = vfs_write(file, "Dub\n", 4, &offset)) != 4)
+	convert_jiffies_to_time();
+	if ((n = vfs_write(file, time, 6, &offset)) != 6)
 	{
 		printk("[!] failed write: %ld\n", n);
 		filp_close(file, NULL);
