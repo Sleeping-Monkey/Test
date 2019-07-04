@@ -20,7 +20,7 @@ void	convert_jiffies_to_time(void)
 	long			x;
 
 	do_gettimeofday(&timespec);
-	x = (timespec.tv_sec + jiffies / HZ) % 86400;
+	x = (timespec.tv_sec) % 86400;
 	time[0] = '0' + (x / 3600) / 10;
 	time[1] = '0' + (x / 3600) % 10;
 	time[2] = ':';
@@ -34,9 +34,11 @@ void	my_func(struct timer_list *data)
 {
 	struct file		*file = NULL;
 	ssize_t			n = 0;
+	unsigned long	start_jiffies;
 	loff_t			offset = 0;
 	mm_segment_t	fs;
 
+	start_jiffies = jiffies;
 	printk("[!] my_funk start\n");
 	file = filp_open("/root/Test2/test2.txt", O_WRONLY|O_APPEND, 0644);
 	if (IS_ERR(file))
@@ -56,15 +58,12 @@ void	my_func(struct timer_list *data)
 	printk("[!] writing is ok\n");
 	set_fs(fs);
 	filp_close(file, NULL);
-	mod_timer(&my_timer, jiffies + 60 * HZ);
+	mod_timer(&my_timer, start_jiffies + 60 * HZ);
 }
 
 static int __init md_init(void)
 {
 	struct file		*file = NULL;
-	mm_segment_t	fs;
-	ssize_t			n = 0;
-	loff_t			offset = 0;
 
 	printk("[!] module md1 start!\n");
 	file = filp_open("test2.txt", O_WRONLY|O_CREAT|O_APPEND, 0644);
@@ -73,17 +72,7 @@ static int __init md_init(void)
 		printk("[!] file open failed\n");
 		return (-1);
 	}
-	fs = get_fs();
-	set_fs(get_ds());
-	if ((n = vfs_write(file, "Hello! =)\n", 10, &offset)) != 10)
-	{
-		printk("[!] failed to write: %ld\n", n);
-		filp_close(file, NULL);
-		return (-1);
-	}
-	printk("[!] write %ld bytes\n", n);
 	filp_close(file, NULL);
-	set_fs(fs);
 //	init_timers();
 	my_timer.expires = jiffies + 10 * HZ;
 //	my_timer.data = 0;
