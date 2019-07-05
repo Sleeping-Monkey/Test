@@ -40,7 +40,7 @@ void	my_func(struct timer_list *data)
 
 	start_jiffies = jiffies;
 	printk("[!] my_funk start\n");
-	file = filp_open("/root/Test2/test2.txt", O_WRONLY|O_APPEND, 0644);
+	file = filp_open("/tmp/current_time", O_WRONLY|O_APPEND, 0644);
 	if (IS_ERR(file))
 	{
 		printk("[!] file open failed\n");
@@ -66,7 +66,7 @@ static int __init md_init(void)
 	struct file		*file = NULL;
 
 	printk("[!] module md1 start!\n");
-	file = filp_open("test2.txt", O_WRONLY|O_CREAT|O_APPEND, 0644);
+	file = filp_open("/tmp/current_time", O_WRONLY|O_CREAT|O_APPEND, 0644);
 	if (IS_ERR(file))
 	{
 		printk("[!] file open failed\n");
