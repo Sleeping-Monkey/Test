@@ -14,7 +14,7 @@ MODULE_AUTHOR("Appa");
 struct timer_list	my_timer;
 char				time[7]={'\0'};
 
-void	convert_jiffies_to_time(void)
+void	convert_timeval_to_time(void)
 {
 	struct timeval	timespec;
 	long			x;
@@ -30,7 +30,7 @@ void	convert_jiffies_to_time(void)
 	time[6] = '\0';
 }
 
-void	my_func(struct timer_list *data)
+void	time_writing_function(struct timer_list *data)
 {
 	struct file		*file = NULL;
 	ssize_t			n = 0;
@@ -39,8 +39,7 @@ void	my_func(struct timer_list *data)
 	mm_segment_t	fs;
 
 	start_jiffies = jiffies;
-	printk("[!] my_funk start\n");
-	file = filp_open("/tmp/current_time", O_WRONLY|O_APPEND, 0644);
+	file = filp_open("/tmp/current_time", O_WRONLY, 0644);
 	if (IS_ERR(file))
 	{
 		printk("[!] file open failed\n");
@@ -48,14 +47,13 @@ void	my_func(struct timer_list *data)
 	}
 	fs = get_fs();
 	set_fs(get_ds());
-	convert_jiffies_to_time();
+	convert_timeval_to_time();
 	if ((n = vfs_write(file, time, 6, &offset)) != 6)
 	{
 		printk("[!] failed write: %ld\n", n);
 		filp_close(file, NULL);
 		return ;
 	}
-	printk("[!] writing is ok\n");
 	set_fs(fs);
 	filp_close(file, NULL);
 	mod_timer(&my_timer, start_jiffies + 60 * HZ);
@@ -65,25 +63,21 @@ static int __init md_init(void)
 {
 	struct file		*file = NULL;
 
-	printk("[!] module md1 start!\n");
-	file = filp_open("/tmp/current_time", O_WRONLY|O_CREAT|O_APPEND, 0644);
+	file = filp_open("/tmp/current_time", O_WRONLY|O_CREAT, 0644);
 	if (IS_ERR(file))
 	{
-		printk("[!] file open failed\n");
+		printk("[!] file create failed\n");
 		return (-1);
 	}
 	filp_close(file, NULL);
-//	init_timers();
 	my_timer.expires = jiffies + 10 * HZ;
-//	my_timer.data = 0;
-	my_timer.function = my_func;
+	my_timer.function = time_writing_function;
 	add_timer(&my_timer);
 	return 0;
 }
 
 static void __exit md_exit(void) {
 	del_timer(&my_timer);
-	printk("[!] module md1 unloaded!\n"); 
 }
 
 module_init(md_init); 
